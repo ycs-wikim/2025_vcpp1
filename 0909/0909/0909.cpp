@@ -128,11 +128,46 @@ int g_y;        /// 이전 좌표의 y 값
 bool g_push = false;    /// 마우스 왼쪽 버튼이 눌려 있는지 여부를 확인하기 위한 변수
                 /// 플래그 변수 : 상태 값을 확인할 수 있는 정보를 갖는 변수
 
+
+/// RECT 자료형 : Win32에서 제공되는 기본 자료형. 사각형 좌표 표현을 위한 자료형
+RECT g_a;
+/*
+typedef struct tagRECT
+{
+    LONG    left;       /// 좌상단 x 좌표
+    LONG    top;        /// 좌상단 y 좌표
+    LONG    right;      /// 우하단 x 좌표
+    LONG    bottom;     /// 우하단 y 좌표
+} RECT, *PRECT, NEAR *NPRECT, FAR *LPRECT;
+*/
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     
     switch (message)
     {
+    case WM_KEYDOWN:
+    {
+        switch (wParam)
+        {
+        case 'w':
+            break;
+        case 'a':
+            break;
+        case 's':
+            break;
+        case 'd':
+            break;
+        }
+        /// 키보드 정보 : wParam
+        WCHAR buf[32] = { 0, };
+        wsprintfW(buf, L"누른 키는  %d  입니다.", wParam);
+        HDC hdc = GetDC(hWnd);
+        TextOut(hdc, 10, 50, buf, lstrlenW(buf));
+        ReleaseDC(hWnd, hdc);
+    }
+        break;
+
     case WM_RBUTTONDOWN:
     {
         /// 프로그래머가 WM_PAINT의 호출을 OS에게 요청 API
@@ -162,6 +197,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             break;
 
         int x, y;
+        WCHAR buf[128] = { 0, };
         x = LOWORD(lParam);
         y = HIWORD(lParam);     /// x, y 좌표 값을 획득
 
@@ -172,15 +208,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         /// 끝점 : 현재 좌표 값으로 설정
         LineTo(hdc, x, y);
 
+        wsprintfW(buf, L"x: %d - y: %d", x, y);
+        TextOut(hdc, 500, 10, buf, lstrlenW(buf));
+
+        g_a.left = g_x;
+        g_a.top = g_y;
+        g_a.right = x;
+        g_a.bottom = y;
+        
         /// 선을 모두 그린 상태
         /// 현재 상태를 전역 변수에 보관 --> 이전 정보
         g_x = x;
         g_y = y;
 
-        /*
-        Rectangle(hdc, 10, 10, x, y);
-        Ellipse(hdc, 10, 10, x, y); /// 타원 그리기
-        */
+        Rectangle(hdc, g_a.left, g_a.top, g_a.right, g_a.bottom);
+        Ellipse(hdc, g_a.left, g_a.top, g_a.right, g_a.bottom); /// 타원 그리기
 
         ReleaseDC(hWnd, hdc);       /// HDC 해제
     }
@@ -206,7 +248,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
+            /// 화면에 Hello World 글자를 표기하기!
+            /// 현재 윈도우 시스템은 대부분 Uni-Code를 지원한다.
+            /// Ex) MessageBox(hWnd, L"내용", L"타이틀", MB_OK);
             // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
+            /// wchar_t  ==> WCHAR로 정의해서 사용
+            WCHAR buf[16] = L"Hello World!";
+            /// Hello World! ==> HNeNlNlNoN N...
+            /// 글자 화면 출력 API를 사용
+            TextOut(hdc, 10, 10, buf, lstrlenW(buf));
             EndPaint(hWnd, &ps);
         }
         break;
