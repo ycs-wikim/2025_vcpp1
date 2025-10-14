@@ -127,12 +127,33 @@ RECT g_icon;
 BOOL g_click;
 
 
+struct blocks
+{
+    RECT rect;
+    int type;
+};
+
+#define BLOCK_SIZE 10
+blocks g_value[BLOCK_SIZE][BLOCK_SIZE];
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
     case WM_CREATE:
     {
+        for (int i = 0; i < BLOCK_SIZE; i++)
+        {
+            for (int j = 0; j < BLOCK_SIZE; j++)
+            {
+                g_value[i][j].rect.left = 10 + (50 * i);
+                g_value[i][j].rect.top = 10 + (50 * j);
+                g_value[i][j].rect.right = g_value[i][j].rect.left + 50;
+                g_value[i][j].rect.bottom = g_value[i][j].rect.top + 50;
+
+                g_value[i][j].type = 1;
+            }
+        }
         /// 객체의 초기화 좌표 설정
         g_icon.left = 50;
         g_icon.top = 50;
@@ -156,6 +177,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             g_click = TRUE;
             //MessageBox(hWnd, L"Match", L"icon", MB_OK);
         }
+
+
+        BOOL changed = FALSE;
+        for (int i = 0; i < BLOCK_SIZE; i++)
+        {
+            for (int j = 0; j < BLOCK_SIZE; j++)
+            {
+                if (IntersectRect(&ret, &g_value[i][j].rect, &current))
+                {
+                    g_value[i][j].type = 2;
+                    changed = TRUE;
+                }
+            }
+        }
+
+        if (changed)
+            InvalidateRect(hWnd, NULL, TRUE);
     }
         break;
     case WM_LBUTTONUP:
@@ -203,6 +241,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
             Rectangle(hdc, g_icon.left, g_icon.top, g_icon.right, g_icon.bottom);
+
+            for (int i = 0; i < BLOCK_SIZE; i++)
+            {
+                for (int j = 0; j < BLOCK_SIZE; j++)
+                {
+                    if (1 == g_value[i][j].type)
+                        Rectangle(hdc,
+                            g_value[i][j].rect.left, g_value[i][j].rect.top,
+                            g_value[i][j].rect.right, g_value[i][j].rect.bottom);
+                    else if(2 == g_value[i][j].type)
+                        Ellipse(hdc,
+                            g_value[i][j].rect.left, g_value[i][j].rect.top,
+                            g_value[i][j].rect.right, g_value[i][j].rect.bottom);
+                }
+            }
             EndPaint(hWnd, &ps);
         }
         break;
