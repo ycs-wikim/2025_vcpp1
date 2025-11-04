@@ -171,6 +171,9 @@ pig(LPVOID param)
     }
 
     ReleaseDC(g_hWnd, hdc);
+    /// 아름답게 스레드를 종료하는 API
+    ExitThread(0);
+
     return 0;       /// 정상 종료
 }
 
