@@ -1,8 +1,8 @@
-﻿// 1118.cpp : 애플리케이션에 대한 진입점을 정의합니다.
+﻿// 1125.cpp : 애플리케이션에 대한 진입점을 정의합니다.
 //
 
 #include "framework.h"
-#include "1118.h"
+#include "1125.h"
 
 #define MAX_LOADSTRING 100
 
@@ -17,10 +17,6 @@ BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
-/// PID 값 보관을 위한 전역 변수
-int g_pid = 0;
-
-
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -30,14 +26,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: 여기에 코드를 입력합니다.
-    /// wtoi(WCHAR to Integer) ==> c 버전 atoi(ASCII to Integer)
-    g_pid = _wtoi(lpCmdLine);           /// PID 값이 전달
-        /// fork( ) 실행 후 pid가 0이면 자식, pid가 실제 pid 값이면 부모
-        /// window에서 실행 시점에 pid가 0이면 부모, pid가 실제 pid 값이면 자식
 
     // 전역 문자열을 초기화합니다.
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_MY1118, szWindowClass, MAX_LOADSTRING);
+    LoadStringW(hInstance, IDC_MY1125, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
 
     // 애플리케이션 초기화를 수행합니다:
@@ -46,7 +38,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MY1118));
+    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MY1125));
 
     MSG msg;
 
@@ -81,10 +73,10 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.cbClsExtra     = 0;
     wcex.cbWndExtra     = 0;
     wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MY1118));
+    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MY1125));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_MY1118);
+    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_MY1125);
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -130,117 +122,93 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 //
 
-/// 스레드 종료 변수
-BOOL g_thread_exit = FALSE;
-
-DWORD WINAPI test_thread(LPVOID param)
-{
-    while(FALSE == g_thread_exit) { }
-
-    ExitThread(0);
-    return 0;
-}
-
-/*
-* PROCESS_INFORMATION 구조체에 포함된 정보들 ==> 실행된 다음에 알 수 있는 정보
-typedef struct _PROCESS_INFORMATION {
-    HANDLE hProcess;
-    HANDLE hThread;
-    DWORD dwProcessId;
-    DWORD dwThreadId;
-} PROCESS_INFORMATION, * PPROCESS_INFORMATION, * LPPROCESS_INFORMATION;
-*/
-
-/*
-* STARTUPINFO 구조체에 포함된 정보들 ==> 실행 전에 OS에게 알려주는 정보
-typedef struct _STARTUPINFOA {
-    DWORD   cb;
-    LPSTR   lpReserved;
-    LPSTR   lpDesktop;
-    LPSTR   lpTitle;
-    DWORD   dwX;
-    DWORD   dwY;
-    DWORD   dwXSize;
-    DWORD   dwYSize;
-    DWORD   dwXCountChars;
-    DWORD   dwYCountChars;
-    DWORD   dwFillAttribute;
-    DWORD   dwFlags;
-    WORD    wShowWindow;
-    WORD    cbReserved2;
-    LPBYTE  lpReserved2;
-    HANDLE  hStdInput;          /// 0번 파일 아이디
-    HANDLE  hStdOutput;         /// 1번 파일 ...
-    HANDLE  hStdError;          /// 2번 ...
-} STARTUPINFOA, * LPSTARTUPINFOA;
-*/
-
-
-/// 프로세스가 생성된 다음에 알 수 있는 정보
-PROCESS_INFORMATION g_pi;
-
-
-
+/// 윈도우 메시징 시스템의 기본 구조
+/// WndProc의 함수를 내가 호출한다! ==> WndProc도 함수!
+/// 4개의 인수를 내가 설정해서 전달해야 한다!
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
     case WM_LBUTTONDOWN:
     {
-        if (g_pid != 0)
+        /// child 윈도우의 제목 표시줄의 내용으로 HWND 획득
+        HWND child = FindWindow(NULL, L"child");
+        if (NULL == child)
+        {
+            MessageBox(hWnd, L"못 찾았음", L"child", MB_OK);
             break;
-        /// 프로세스 생성 전에 OS에게 알리는 정보
-        /// 모두 0으로 설정하면 OS 기본 설정을 자동으로 적용해서 실행
-        STARTUPINFO si = { 0, };
+        }
+        PostMessage(child, WM_LBUTTONDOWN, wParam, lParam);
 
-        wchar_t pName[64] = L"mspaint.exe d:\\sc.png";
-        CreateProcess(NULL, pName, NULL, NULL, FALSE, 0, NULL, NULL, &si, &g_pi);
-
-        memset(pName, 0x00, 64);
-        wsprintf(pName, L"1118.exe %d", g_pi.dwProcessId);
-        CreateProcess(NULL, pName, NULL, NULL, FALSE, 0, NULL, NULL, &si, &g_pi);
-        
-        /*  /// thread의 ID 값 확인 코드
-        DWORD tid = 0;
-        CreateThread(NULL, 0, test_thread, NULL, 0, &tid);
+        int x = LOWORD(lParam);
+        int y = HIWORD(lParam);
         HDC hdc = GetDC(hWnd);
-        WCHAR buf[16] = { 0, };
 
-        wsprintf(buf, L"TID : %d", tid);
-        TextOut(hdc, 10, 10, buf, lstrlen(buf));
+        for (int i = 0; i < y; i++)
+        {
+            MoveToEx(hdc, x, 0, NULL);
+            LineTo(hdc, x, i);
+            Sleep(100);
+        }
+
         ReleaseDC(hWnd, hdc);
+
+        /*
+        /// 참 : OS에서 발생되어 전달된 메시지
+        if (1 == wParam)
+        {
+            //WndProc(hWnd, WM_RBUTTONDOWN, 0, 0);
+            WndProc(hWnd, WM_LBUTTONDOWN, 999, lParam);
+        }
+        else
+        {
+            int x = LOWORD(lParam);
+            int y = HIWORD(lParam);
+            HDC hdc = GetDC(hWnd);
+
+            MoveToEx(hdc, 10, 10, NULL);
+            LineTo(hdc, x, y);
+
+            ReleaseDC(hWnd, hdc);
+            //MessageBox(hWnd, L"오른쪽", L"버튼 눌림", MB_OK);
+        }
         */
     }
         break;
-
     case WM_RBUTTONDOWN:
     {
-        if (g_pid == 0)
-            break;
-        /// 자식 프로세스
-        /// PID 값은 있는데, HANDLE은 없는 상황 => PID로 HANDLE을 얻어야 한다~!
-        HANDLE h = OpenProcess(PROCESS_ALL_ACCESS, FALSE, g_pid);
-        if (NULL == h)
-        {
-            MessageBox(hWnd, L"형제 프로세스 못찾음", L"asdf", MB_OK);
-            break;
-        }
-        TerminateProcess(h, 0);
-        /// 자식 프로세스 종료 API
-        //TerminateProcess(g_pi.hProcess, 0);
-        //TerminateProcess(GetCurrentProcess(), 0);
-
-        /// 자식 스레드 제어 : 일시 정지
-        //SuspendThread(g_pi.hThread);
-
-        //g_thread_exit = TRUE;
+        
     }
         break;
 
     case WM_KEYDOWN:
     {
-        /// 자식 스레드 제어 : 작업 재개
-        ResumeThread(g_pi.hThread);
+        /// HANDLE == HWND
+        HWND notepad;
+        notepad = FindWindow(NULL, L"제목 없음 - 메모장");
+        if (NULL == notepad)
+        {
+            MessageBox(hWnd, L"메모장", L"못 찾았음", MB_OK);
+            break;
+        }
+        //MessageBox(hWnd, L"메모장", L"찾았음~~~~~~~~~", MB_OK);
+        ////////////////////////////// 메모장 프로세스의 윈도우 핸들 찾았다.
+        HWND textbox;
+        textbox = FindWindowEx(notepad, NULL, L"NotepadTextBox", NULL);
+        if (NULL == textbox)
+        {
+            MessageBox(hWnd, L"TextBox", L"못 찾았음", MB_OK);
+            break;
+        }
+        HWND edit;
+        edit = FindWindowEx(textbox, NULL, L"RichEditD2DPT", NULL);
+        if (NULL == edit)
+        {
+            MessageBox(hWnd, L"Edit", L"못 찾았음", MB_OK);
+            break;
+        }
+
+        SendMessage(edit, WM_CHAR, wParam, lParam);
     }
         break;
 
@@ -266,15 +234,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
-            WCHAR buf[128] = { 0, };
-            wsprintf(buf, L"Parent PID[ %d ] TID[ %d ]",
-                GetCurrentProcessId(), GetCurrentThreadId());
-            TextOut(hdc, 10, 10, buf, lstrlen(buf));
-            /// 버퍼 메모리 초기화
-            memset(buf, 0x00, 128);
-            wsprintf(buf, L"Child PID[ %d ] TID[ %d ]",
-                g_pi.dwProcessId, g_pi.dwThreadId);
-            TextOut(hdc, 10, 25, buf, lstrlen(buf));
             EndPaint(hWnd, &ps);
         }
         break;
